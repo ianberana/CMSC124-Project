@@ -3,28 +3,20 @@ class SyntaxAnalyzer:
     def __init__(self, tokens):
         self.tokens = tokens
         self.index = 0
-        self.expressions = [
-            'NUMBR',
-            'NUMBAR',
-            'YARN',
-            'TROOF',
-            'VARIABLE',
-            'SUMOF',
-            'DIFFOF',
-            'PRODUKTOF',
-            'QUOSHUNTOF',
-            'MODOF',
-            'BIGGROF',
-            'SMALLROF',
-            'BOTHOF',
-            'EITHEROF',
-            'WONOF',
-            'ALLOF',
-            'ANYOF',
-            'NOT',
-            'BOTHSAEM',
-            'DIFFRINT'
-        ]
+        self.literals = ['NUMBR','NUMBAR','YARN','TROOF',]
+        self.arith_op = ['SUMOF','DIFFOF','PRODUKTOF','QUOSHUNTOF','MODOF', 'BIGGROF','SMALLROF']
+        self.bool_bin_op = ['BOTHOF','EITHEROF','WONOF']
+        self.bool_inf_op = ['ALLOF','ANYOF']
+        self.com_op = ['BOTHSAEM', 'DIFFRINT']
+        self.operations = self.arith_op + self.bool_bin_op + self.bool_inf_op + self.com_op + ['NOT', 'SMOOSH']
+        # [
+        #     'SUMOF','DIFFOF','PRODUKTOF','QUOSHUNTOF','MODOF', 'BIGGROF','SMALLROF', # arithmetic
+        #     'BOTHOF','EITHEROF','WONOF', # boolean binary
+        #     'ALLOF','ANYOF', # boolean infinite arity
+        #     'NOT',  # boolean unary
+        #     'BOTHSAEM', 'DIFFRINT', # comparison
+        #     'SMOOSH' # concatentation
+        # ]
         self.statements = ['OBTW', 'WAZZUP', 'VARIABLE', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE']
 
     def current_token(self):
@@ -75,6 +67,7 @@ class SyntaxAnalyzer:
         token = self.current_token()
         if token and token["type"] == 'WAZZUP':
             self.next_token() # next token should be I HAS A
+            print("Variable declaration section start")
             self.parse_variable_declaration()  # Parse variable declaration
         elif token and token["type"] == 'VISIBLE':
             self.parse_visible_statement()  # Parse VISIBLE statement
@@ -92,28 +85,75 @@ class SyntaxAnalyzer:
             if variable_token["type"] != 'VARIABLE':
                 raise RuntimeError(f"Expected variable name, got {variable_token}")
             
-            # Look ahead to see if there's an 'ITZ' (indicating an initialization)
+            # check if there's an 'ITZ' (indicating an initialization)
             if self.current_token() and self.current_token()["type"] == 'ITZ':
                 self.next_token()  # Consume 'ITZ'
-                
-                value_token = self.next_token()  # Value (number or variable)
-                if value_token["type"] not in self.expressions:
-                    raise RuntimeError(f"Expected valid expression, got {value_token}")
+                # check whether the next token is a valid expression
+                expression = self.parse_expression()
 
                 # Handle initialization
-                print(f"Declared variable {variable_token['value']} with initialization value {value_token['value']}")
+                print(f"Declared variable {variable_token['value']} with initialization value {expression}")
+                self.next_token() # consume expression
+                # print(f"Declared variable {expression['value']} with initialization value {expression['value']}")
             else:
                 # No initialization, just declaration
                 print(f"Declared variable {variable_token['value']} without initialization")
+        print("Variable declaration section end")
         self.next_token()
+
+    def parse_expression(self):
+        exp_token = self.current_token() # stores the current expression
+
+        if exp_token:
+            # return value if expression is a valid literal or a variable
+            if exp_token["type"] in list(self.literals + ['VARIABLE']):
+                return exp_token['value']
+            # check if expression is a valid operation
+            elif exp_token["type"] in self.operations:
+                # print(f"declared an operation: {exp_token['value']}")
+                exp = self.parse_operation()
+                # returns value of operation
+                return exp
+            else:
+                raise RuntimeError(f"Unexpected expression starting with {exp_token}")        
+
+    def parse_operation(self):
+        operation = self.next_token() # store operation used
+        if operation:
+            # Handle arithmetic operations
+            if operation["type"] in self.arith_op:
+                op = self.parse_arith_op()
+            else:
+                raise RuntimeError(f"Unexpected operation starting with {operation}")
+        return f"{operation['value'] + str(op)}"
+
+    def parse_arith_op(self):
+        first_op = self.parse_expression()
+        self.next_token() # move to "AN" token
+        if first_op:
+            if self.current_token()["type"] != "AN":
+                raise RuntimeError(f"Expected AN, got {self.current_token()}")
+            else:
+                self.next_token() # consume AN
+                # check if second operator is a valid expression
+                second_op = self.parse_expression()
+                if second_op:
+                    return first_op, second_op
+                else:
+                    raise RuntimeError(f"Expected expression for second operand, got {second_op}")
+        else:
+            raise RuntimeError(f"Expected expression for first operand, got {first_op}")
+
 
     def parse_visible_statement(self):
         self.next_token()  # Consume 'VISIBLE'
-        value_token = self.next_token()  # The value to print
-        if value_token["type"] in self.expressions:
-            print(f"Visible: {value_token['value']}")
+        # value_token = self.next_token()  # The value to print
+        exp = self.parse_expression()
+        if exp:
+            print(f"Visible: {exp}")
         else:
-            raise RuntimeError(f"Expected an expression, got {value_token}")
+            raise RuntimeError(f"Expected an expression, got {exp}")
+        self.next_token()
 
     def parse_assignment(self):
         token = self.next_token()
