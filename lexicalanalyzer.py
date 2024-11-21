@@ -1,4 +1,3 @@
-
 import re
 import syntaxanalyzer as s
 
@@ -10,7 +9,6 @@ TOKEN_PATTERNS = [
     ('BUHBYE', r'^BUHBYE\b'),   
     ('IHASA', r'^I HAS A\b'),          # Variable initialization keyword
     ('ITZ', r'^ITZ\b'),
-    ('VAR_ASSIGN', r'^R\b'), # Variable assignment keyword
     ('VISIBLE', r'^VISIBLE\b'),                      # Output statement keyword
     ('PLUS', r'^(\+)\s'),                  # Output statement separator
     ('GIMMEH', r'^GIMMEH\b'),                        # Input statement keyword
@@ -53,7 +51,7 @@ TOKEN_PATTERNS = [
     ('UPPIN', r'^UPPIN\b'),                # Increment operation in loops
     ('NERFIN', r'^NERFIN\b'),               # Decrement operation in loops
     ('YR', r'^YR\b'),
-    ('R', r'^R$'),
+    ('R', r'^R\b'),
     # ('A', r'^A$'),
     ('SMOOSH', r'^SMOOSH\b'),
     ('MAEK', r'^MAEK\b'),
@@ -152,7 +150,7 @@ def tokenize(source_code):
     return tokens
 
 def read_file():
-    with open("input files/test.lol", 'r') as file: # read input.txt
+    with open("test.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 

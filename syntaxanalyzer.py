@@ -1,4 +1,3 @@
-
 # Syntax Analyzer (Parser) for LOLcode
 class SyntaxAnalyzer:
     def __init__(self, tokens):
@@ -10,7 +9,7 @@ class SyntaxAnalyzer:
         self.bool_inf_op = ['ALLOF','ANYOF']
         self.com_op = ['BOTHSAEM', 'DIFFRINT']
         self.operations = self.arith_op + self.bool_bin_op + self.bool_inf_op + self.com_op + ['NOT', 'SMOOSH']
-        self.statements = ['OBTW', 'WAZZUP', 'VARIABLE', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE']
+        self.statements = ['OBTW', 'WAZZUP', 'VARIABLE', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH']
 
     def current_token(self):
         # Returns the current token.
@@ -58,21 +57,35 @@ class SyntaxAnalyzer:
 
     def parse_statement(self):
         token = self.current_token()
-        if token and token["type"] == 'WAZZUP':
-            self.next_token() # next token should be I HAS A
-            print("Variable declaration section start")
-            self.parse_variable_declaration()  # Parse variable declaration
-        elif token and token["type"] == 'VISIBLE':
-            self.parse_visible_statement()  # Parse VISIBLE statement
-        elif token and token["type"] in 'VARIABLE':
-            self.parse_assignment()  # Parse variable assignment
-        else:
-            raise RuntimeError(f"Unexpected statement starting with {token}")
+        if token:
+            if token["type"] == 'WAZZUP':
+                self.next_token() # next token should be I HAS A
+                print("Variable declaration section start")
+                self.parse_variable_declaration()  # Parse variable declaration
+            elif token["type"] == 'VISIBLE':
+                self.parse_visible_statement()  # Parse VISIBLE statement
+            elif token["type"] in 'VARIABLE':
+                self.parse_assignment()  # Parse variable assignment
+            elif token["type"] == 'GIMMEH':
+                self.parse_gimmeh_statement()
+                # parse input 
+            else:
+                raise RuntimeError(f"Unexpected statement starting with {token}")
 
 
     def parse_variable_declaration(self):
         while self.current_token()["type"] != 'BUHBYE':
-            self.next_token()  # Consume 'I HAS A'
+            # if other statement (except comments) starts inside wazzup, raise error
+            if self.current_token()['type'] not in ['OBTW','BTW'] and  self.current_token()['type'] in self.statements:
+                raise RuntimeError(f"Variable declaration section must end with BUHBYE, got {self.current_token()['type']}")
+            
+            if self.current_token()['type'] in ['OBTW','BTW']:
+                comment = self.current_token() # change to next_token if nahiwalay na ang text sa keyword
+                print(f"Comment detected: {comment['value']}")
+                # INSERT OBTW HANDLER
+                self.next_token() # consume comment
+
+            self.next_token()  # Consume 'I HAS A' 
             # The next token should be the variable name
             variable_token = self.next_token()
             if variable_token["type"] != 'VARIABLE':
@@ -137,8 +150,16 @@ class SyntaxAnalyzer:
         else:
             raise RuntimeError(f"Expected expression for first operand, got {first_op}")
 
+    def parse_gimmeh_statement(self):
+        self.next_token() # consume 'GIMMEH'
+        var = self.next_token()
+        if var['type'] == 'VARIABLE':
+            print(f"GIMMEH: {var}")
+        else:
+            raise RuntimeError(f"Expected a valid variable, got {var}")
 
     def parse_visible_statement(self):
+        # to fix: handle infinite arity delimited by '+'
         self.next_token()  # Consume 'VISIBLE'
         # value_token = self.next_token()  # The value to print
         exp = self.parse_expression()
@@ -149,13 +170,17 @@ class SyntaxAnalyzer:
         self.next_token()
 
     def parse_assignment(self):
-        token = self.next_token()
-        variable_token = token  # Variable to assign value to
-        if variable_token["type"] != 'R':
-            raise RuntimeError(f"Expected R, got {variable_token}")
+        variable = self.next_token()  # Variable to assign value to
+        if variable['type'] != 'VARIABLE':
+            raise RuntimeError(f"Expected variable, got {variable}")
+                                 
+        # self.next_token() # go to token 'R'
+        if self.current_token()['type'] != 'R':
+            raise RuntimeError(f"Expected R, got {self.current_token()}")
+        self.next_token() # consume R
+        value_token = self.current_token()  # Value to assign
+        exp = self.parse_expression()
+        if not exp:
+            raise RuntimeError(f"Expected expression, got {value_token}")
 
-        value_token = self.next_token()  # Value to assign
-        if value_token["type"] not in self.expressions:
-            raise RuntimeError(f"Expected number or variable, got {value_token}")
-
-        print(f"Assigned {value_token['value']} to variable {variable_token['value']}")
+        print(f"Assigned {value_token['value']} to variable {variable['value']}")
