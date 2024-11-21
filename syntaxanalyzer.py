@@ -69,6 +69,12 @@ class SyntaxAnalyzer:
             elif token["type"] == 'GIMMEH':
                 self.parse_gimmeh_statement()
                 # parse input 
+            elif token["type"] == 'HOWIZI':
+                self.parse_function_definition()  # Parse function definition
+            elif token["type"] == 'IIZ':
+                self.parse_function_call()  # Parse function call
+            elif token["type"] == 'FOUNDYR' or token["type"] == 'GTFO':
+                self.parse_return_statement()  # Parse return statement
             else:
                 raise RuntimeError(f"Unexpected statement starting with {token}")
 
@@ -108,20 +114,24 @@ class SyntaxAnalyzer:
         self.next_token()
 
     def parse_expression(self):
-        exp_token = self.current_token() # stores the current expression
+        exp_token = self.current_token()
 
         if exp_token:
-            # return value if expression is a valid literal or a variable
-            if exp_token["type"] in list(self.literals + ['VARIABLE']):
-                return exp_token['value']
-            # check if expression is a valid operation
+            if exp_token["type"] in self.literals + ['VARIABLE']:
+                value = exp_token['value']
+                self.next_token()  # Consume the expression token
+                return value
             elif exp_token["type"] in self.operations:
-                # print(f"declared an operation: {exp_token['value']}")
                 exp = self.parse_operation()
-                # returns value of operation
                 return exp
+            elif exp_token["type"] == 'IIZ':
+                value = self.parse_function_call()
+                return value
             else:
-                raise RuntimeError(f"Unexpected expression starting with {exp_token}")        
+                raise RuntimeError(f"Unexpected expression starting with {exp_token}")
+        else:
+            raise RuntimeError("Expected expression, but got None")
+        
 
     def parse_operation(self):
         operation = self.next_token() # store operation used
@@ -185,3 +195,69 @@ class SyntaxAnalyzer:
 
         print(f"Assigned {exp} to variable {variable['value']}")
         self.next_token()
+
+    def parse_function_definition(self):
+        self.next_token()  # Consume 'HOWIZI'
+        func_name_token = self.current_token()
+        if func_name_token['type'] == 'LABEL':
+            func_name = func_name_token['value']
+            self.next_token()  # Consume function name
+            # Now parse parameters
+            params = self.parse_parameters()
+            print(f"Function definition: {func_name} with parameters {params}")
+            # Now parse the function body
+            self.parse_function_body(func_name)
+        else:
+            raise RuntimeError(f"Expected function name after 'HOW IZ I', got {func_name_token}")
+
+    def parse_function_body(self, func_name):
+        # Parse statements inside function until 'IFUSAYSO'
+        while self.current_token() and self.current_token()['type'] != 'IFUSAYSO':
+            self.parse_statements()
+        if self.current_token() and self.current_token()['type'] == 'IFUSAYSO':
+            self.next_token()  # Consume 'IFUSAYSO'
+            print(f"End of function definition: {func_name}")
+        else:
+            raise RuntimeError(f"Expected 'IF U SAY SO' at end of function definition {func_name}")
+
+    def parse_parameters(self):
+        params = []
+        if self.current_token() and self.current_token()['type'] == 'YR':
+            self.next_token()  # Consume 'YR'
+            param = self.parse_expression()
+            params.append(param)
+            # Now check for more parameters
+            while self.current_token() and self.current_token()['type'] == 'AN':
+                self.next_token()  # Consume 'AN'
+                if self.current_token() and self.current_token()['type'] == 'YR':
+                    self.next_token()  # Consume 'YR'
+                    param = self.parse_expression()
+                    params.append(param)
+                else:
+                    raise RuntimeError(f"Expected 'YR' after 'AN' in parameter list, got {self.current_token()}")
+        return params
+
+    def parse_function_call(self):
+        self.next_token()  # Consume 'IIZ'
+        func_name_token = self.current_token()
+        if func_name_token['type'] == 'LABEL':
+            func_name = func_name_token['value']
+            self.next_token()  # Consume function name
+            # Now parse parameters
+            params = self.parse_parameters()
+            print(f"Function call: {func_name} with parameters {params}")
+            return f"FunctionCall({func_name}, {params})"
+        else:
+            raise RuntimeError(f"Expected function name after 'I IZ', got {func_name_token}")
+
+    def parse_return_statement(self):
+        token = self.current_token()
+        if token['type'] == 'FOUNDYR':
+            self.next_token()  # Consume 'FOUNDYR'
+            expr = self.parse_expression()
+            print(f"Return with value: {expr}")
+        elif token['type'] == 'GTFO':
+            self.next_token()  # Consume 'GTFO'
+            print("Return (GTFO) without value")
+        else:
+            raise RuntimeError(f"Expected 'FOUND YR' or 'GTFO', got {token}")
