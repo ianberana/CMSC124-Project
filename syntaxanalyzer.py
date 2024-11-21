@@ -9,14 +9,6 @@ class SyntaxAnalyzer:
         self.bool_inf_op = ['ALLOF','ANYOF']
         self.com_op = ['BOTHSAEM', 'DIFFRINT']
         self.operations = self.arith_op + self.bool_bin_op + self.bool_inf_op + self.com_op + ['NOT', 'SMOOSH']
-        # [
-        #     'SUMOF','DIFFOF','PRODUKTOF','QUOSHUNTOF','MODOF', 'BIGGROF','SMALLROF', # arithmetic
-        #     'BOTHOF','EITHEROF','WONOF', # boolean binary
-        #     'ALLOF','ANYOF', # boolean infinite arity
-        #     'NOT',  # boolean unary
-        #     'BOTHSAEM', 'DIFFRINT', # comparison
-        #     'SMOOSH' # concatentation
-        # ]
         self.statements = ['OBTW', 'WAZZUP', 'VARIABLE', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE']
 
     def current_token(self):
