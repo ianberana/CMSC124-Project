@@ -12,7 +12,7 @@ TOKEN_PATTERNS = [
     ('VISIBLE', r'^VISIBLE\b'),                      # Output statement keyword
     ('PLUS', r'^(\+)\s'),                  # Output statement separator
     ('GIMMEH', r'^GIMMEH\b'),                        # Input statement keyword
-    ('BTW', r'^\bBTW\b.*'),                # Single-line comment
+    ('BTW', r'^\b(BTW) (.*)\b'),                # Single-line comment
     ('OBTW', r'^OBTW\b'),            # Start of multi-line comment
     ('TLDR', r'^TLDR\b'),              # End of multi-line comment
     ('NUMBAR', r'(\+|-)?\d*\.\d+'),                    # Float (NUMBAR) literal
@@ -117,7 +117,18 @@ def tokenize(source_code):
                 #     print(token_type)
                 #     multiline_comments = multiline_comments+ value + "\n"
                 #     index += len(value)
-                if token_type == "TLDR":
+                if token_type == 'BTW':
+                    append_token(tokens, token_type, match.group(1), line_num)
+                    append_token(tokens, 'SINGLECOMMENT', match.group(2), line_num)
+                    index += len(value)
+                    continue
+                elif token_type == 'OBTW':
+                    # print("multiline found")
+                    in_multiline_comment = True
+                    append_token(tokens, token_type, value, line_num)
+                    # index += len(value)
+                    # continue
+                elif token_type == "TLDR":
                     # print("multiline: ",multiline_comments)
                     # append_token(tokens, token_type, multiline_comments, line_num)
                     in_multiline_comment = False
@@ -125,12 +136,6 @@ def tokenize(source_code):
                     # index += len(value)
                     # continue  #  skip since comment sha
 
-                elif token_type == 'OBTW':
-                    # print("multiline found")
-                    in_multiline_comment = True
-                    append_token(tokens, token_type, value, line_num)
-                    # index += len(value)
-                    # continue
                 elif token_type == 'IMINYR' or token_type == 'IMOUTTAYR' or token_type == 'HOWIZI' or token_type == 'IIZ':
                     append_token(tokens, token_type, match.group(1), line_num)
                     append_token(tokens, 'LABEL', match.group(2), line_num)
@@ -141,6 +146,7 @@ def tokenize(source_code):
                 index += len(value)
             elif in_multiline_comment:
                 multiline_comments+ value + "\n"
+                append_token(tokens, 'MULTICOMMENT', value, line_num)
                 index += len(value)
                 continue
             else:
@@ -150,7 +156,7 @@ def tokenize(source_code):
     return tokens
 
 def read_file():
-    with open("test.lol", 'r') as file: # read input.txt
+    with open("input_files/01_variables.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 
@@ -170,7 +176,6 @@ def read_file():
 
 source_code = read_file()
 tokens = tokenize(source_code)
-# print(tokens[0]["type"])
 # for token in tokens:
 #     print(token)
 for token in tokens:
