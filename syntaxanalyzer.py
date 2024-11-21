@@ -72,7 +72,6 @@ class SyntaxAnalyzer:
             else:
                 raise RuntimeError(f"Unexpected statement starting with {token}")
 
-
     def parse_variable_declaration(self):
         while self.current_token()["type"] != 'BUHBYE':
             # if other statement (except comments) starts inside wazzup, raise error
@@ -129,6 +128,8 @@ class SyntaxAnalyzer:
             # Handle arithmetic operations
             if operation["type"] in self.arith_op:
                 op = self.parse_arith_op()
+            elif operation["type"] in self.bool_bin_op:
+                op = self.parse_bool_bin_op()
             else:
                 raise RuntimeError(f"Unexpected operation starting with {operation}")
         return f"{operation['value'] + str(op)}"
@@ -149,6 +150,24 @@ class SyntaxAnalyzer:
                     raise RuntimeError(f"Expected expression for second operand, got {second_op}")
         else:
             raise RuntimeError(f"Expected expression for first operand, got {first_op}")
+
+    def parse_bool_bin_op(self):
+        first_op = self.parse_expression()
+        self.next_token() # move to "AN" token
+        if first_op:
+            if self.current_token()["type"] != "AN":
+                raise RuntimeError(f"Expected AN, got {self.current_token()}")
+            else:
+                self.next_token() # consume AN
+                # check if second operator is a valid expression
+                second_op = self.parse_expression()
+                if second_op:
+                    return first_op, second_op
+                else:
+                    raise RuntimeError(f"Expected expression for second operand, got {second_op}")
+        else:
+            raise RuntimeError(f"Expected expression for first operand, got {first_op}")
+
 
     def parse_gimmeh_statement(self):
         self.next_token() # consume 'GIMMEH'
