@@ -183,4 +183,5 @@ class SyntaxAnalyzer:
         if not exp:
             raise RuntimeError(f"Expected expression, got {value_token}")
 
-        print(f"Assigned {value_token['value']} to variable {variable['value']}")
+        print(f"Assigned {exp} to variable {variable['value']}")
+        self.next_token()
