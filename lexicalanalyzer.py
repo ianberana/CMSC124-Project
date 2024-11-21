@@ -1,5 +1,5 @@
 import re
-# import syntaxanalyzer as s
+import syntaxanalyzer as s
 
 # used regex 
 TOKEN_PATTERNS = [
@@ -151,7 +151,7 @@ def tokenize(source_code):
     return tokens
 
 def read_file():
-    with open("10_functions.lol", 'r') as file: # read input.txt
+    with open("input files/test.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 
@@ -176,5 +176,5 @@ tokens = tokenize(source_code)
 #     print(token)
 for token in tokens:
     print(f"{token['line'] : <5} {token['type'] : <25} {token['value']}")
-# parse = s.SyntaxAnalyzer(tokens)
-# parse.parse()
+parse = s.SyntaxAnalyzer(tokens)
+parse.parse()
