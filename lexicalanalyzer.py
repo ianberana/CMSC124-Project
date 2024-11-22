@@ -158,7 +158,7 @@ def tokenize(source_code):
     return tokens
 
 def read_file():
-    with open("input_files/test.lol", 'r') as file: # read input.txt
+    with open("input_files/10_functions.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 

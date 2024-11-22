@@ -9,7 +9,7 @@ class SyntaxAnalyzer:
         self.bool_inf_op = ['ALLOF','ANYOF']
         self.com_op = ['BOTHSAEM', 'DIFFRINT']
         self.operations = self.arith_op + self.bool_bin_op + self.bool_inf_op + self.com_op + ['NOT', 'SMOOSH']
-        self.statements = ['OBTW', 'WAZZUP', 'VARIABLE', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH']
+        self.statements = ['OBTW', 'WAZZUP', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH', 'HOWIZI', 'IIZ', 'FOUNDYR', 'GTFO']
 
     def current_token(self):
         # Returns the current token.
@@ -59,16 +59,18 @@ class SyntaxAnalyzer:
         token = self.current_token()
         if token:
             if token["type"] == 'WAZZUP':
-                self.next_token() # next token should be I HAS A
-                print("Variable declaration section start")
+                self.next_token()  # Consume 'WAZZUP'
                 self.parse_variable_declaration()  # Parse variable declaration
             elif token["type"] == 'VISIBLE':
                 self.parse_visible_statement()  # Parse VISIBLE statement
-            elif token["type"] in 'VARIABLE':
-                self.parse_assignment()  # Parse variable assignment
+            elif token["type"] == 'VARIABLE':
+                # Check if the next token is 'R' to confirm it's an assignment
+                if self.index + 1 < len(self.tokens) and self.tokens[self.index + 1]["type"] == 'R':
+                    self.parse_assignment()  # Parse variable assignment
+                else:
+                    raise RuntimeError(f"Unexpected VARIABLE statement: {token}")
             elif token["type"] == 'GIMMEH':
-                self.parse_gimmeh_statement()
-                # parse input 
+                self.parse_gimmeh_statement()  # Parse input statement
             elif token["type"] == 'HOWIZI':
                 self.parse_function_definition()  # Parse function definition
             elif token["type"] == 'IIZ':
@@ -145,7 +147,7 @@ class SyntaxAnalyzer:
 
     def parse_arith_op(self):
         first_op = self.parse_expression()
-        self.next_token() # move to "AN" token
+        # self.next_token() # move to "AN" token
         if first_op:
             if self.current_token()["type"] != "AN":
                 raise RuntimeError(f"Expected AN, got {self.current_token()}")
@@ -169,15 +171,32 @@ class SyntaxAnalyzer:
             raise RuntimeError(f"Expected a valid variable, got {var}")
 
     def parse_visible_statement(self):
-        # to fix: handle infinite arity delimited by '+'
         self.next_token()  # Consume 'VISIBLE'
-        # value_token = self.next_token()  # The value to print
-        exp = self.parse_expression()
-        if exp:
-            print(f"Visible: {exp}")
-        else:
-            raise RuntimeError(f"Expected an expression, got {exp}")
-        self.next_token()
+        parts = []
+        
+        # Updated loop condition to include 'KTHXBYE'
+        while self.current_token() and self.current_token()["type"] not in self.statements + ['GTFO', 'IFUSAYSO', 'KTHXBYE']:
+            token = self.current_token()
+            print(f"parse_visible_statement: processing token {token}")  # Debug print
+            
+            if token["type"] in self.literals + ['VARIABLE']:
+                # Parse literals or variables
+                parts.append(token["value"])
+                self.next_token()  # Consume the literal or variable
+            elif token["type"] == 'PLUS':
+                # Parse the concatenation operator
+                parts.append('+')
+                self.next_token()  # Consume '+'
+            else:
+                raise RuntimeError(f"Unexpected token in VISIBLE statement: {self.current_token()} at line {self.current_token().get('line')}")
+        
+        # Join parts to form the full expression for the VISIBLE statement
+        visible_output = " ".join(parts)
+        print(f"Visible: {visible_output}")
+
+
+
+
 
     def parse_assignment(self):
         variable = self.next_token()  # Variable to assign value to
