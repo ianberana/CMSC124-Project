@@ -21,7 +21,7 @@ HAI
     VISIBLE SUM OF PRODUKT OF x AN x AN PRODUKT OF y AN y
     BTW (x+y)^2
     VISIBLE PRODUKT OF SUM OF x AN y AN SUM OF x AN y
-    BTW max(x,y) - min(x,y)
+    BTW max(x,y) - min(x,y) 
     VISIBLE DIFF OF BIGGR OF x AN y AN SMALLR OF x AN y
 
     BTW x + y/x + 0
