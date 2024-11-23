@@ -64,7 +64,7 @@ TOKEN_PATTERNS = [
     ('GTFO', r'^GTFO\b'), 
     ('FOUNDYR', r'^FOUND YR\b'), 
     ('VARIABLE', r'^[A-Za-z_][A-Za-z0-9_]*\b'),      # Variable names
-    ('WHITESPACE', r'\s+'),
+    # ('WHITESPACE', r'\s+'),
     # add pa po kayo if may kulang paaaa
 ]
 
@@ -87,7 +87,7 @@ def append_token(tokens, token_type, value, line_num):
 def tokenize(source_code):
     tokens = []                  
     in_multiline_comment = False # tracker to check if we're inside a multi-line comment
-    multiline_comments = ""
+    # multiline_comments = ""
 
     for line_num, line in enumerate(source_code, start=1):
         index = 0
@@ -98,65 +98,63 @@ def tokenize(source_code):
             continue
         
         while index < len(substring):
-            match = None
+            matched = False
+            
+            match = re.match(r'^\s+', substring[index:])
+            if match:
+                index += len(match.group(0))
+
+            match = re.match(r'^TLDR\b', substring[index:])
+            if match:
+                in_multiline_comment = False
+                append_token(tokens, 'TLDR', match.group(0), line_num)
+                index += len(match.group(0))
+                continue
+
+            if in_multiline_comment:
+                append_token(tokens, 'MULTICOMMENT', line, line_num)
+                index += len(line)
+                continue
+            
+            match = re.match(r'^OBTW\b', substring[index:])
+            if match:
+                in_multiline_comment = True
+                append_token(tokens, 'OBTW', match.group(0), line_num)
+                index += len(match.group(0))
+                continue
+
+            match = re.match(r'^\b(BTW) (.*)\b', substring[index:])
+            if match:
+                append_token(tokens, token_type, match.group(1), line_num)
+                append_token(tokens, 'SINGLECOMMENT', match.group(2), line_num)
+                index += len(match.group(0))
+                continue
+
             for token_type, pattern in TOKEN_PATTERNS:
                 match = re.match(pattern, substring[index:])
-                # for match in matches:
                 if match:
+                    matched = True
+                    value = match.group(0)
+
+                    if token_type == 'IMINYR' or token_type == 'IMOUTTAYR' or token_type == 'HOWIZI' or token_type == 'IIZ':
+                        append_token(tokens, token_type, match.group(1), line_num)
+                        append_token(tokens, 'LABEL', match.group(2), line_num)
+                        index += len(value)
+                        break
+
+                    append_token(tokens, token_type, value, line_num)
+                    index += len(value)
+
                     break
             
-            if match:
-                # token_type = match.lastgroup
-                value = match.group(0)
-
-                if token_type == "WHITESPACE":
-                    index += len(value)
-                    continue
-
-                # if in_multiline_comment:
-                #     print(token_type)
-                #     multiline_comments = multiline_comments+ value + "\n"
-                #     index += len(value)
-                if token_type == 'BTW':
-                    append_token(tokens, token_type, match.group(1), line_num)
-                    append_token(tokens, 'SINGLECOMMENT', match.group(2), line_num)
-                    index += len(value)
-                    continue
-                elif token_type == 'OBTW':
-                    # print("multiline found")
-                    in_multiline_comment = True
-                    append_token(tokens, token_type, value, line_num)
-                    # index += len(value)
-                    # continue
-                elif token_type == "TLDR":
-                    # print("multiline: ",multiline_comments)
-                    # append_token(tokens, token_type, multiline_comments, line_num)
-                    in_multiline_comment = False
-                    multiline_comments = ""
-                    # index += len(value)
-                    # continue  #  skip since comment sha
-
-                elif token_type == 'IMINYR' or token_type == 'IMOUTTAYR' or token_type == 'HOWIZI' or token_type == 'IIZ':
-                    append_token(tokens, token_type, match.group(1), line_num)
-                    append_token(tokens, 'LABEL', match.group(2), line_num)
-                    index += len(value)
-                    continue
-                if not in_multiline_comment:
-                    append_token(tokens, token_type, value, line_num)
-                index += len(value)
-            elif in_multiline_comment:
-                multiline_comments+ value + "\n"
-                append_token(tokens, 'MULTICOMMENT', value, line_num)
-                index += len(value)
-                continue
-            else:
+            if not matched:
                 raise RuntimeError(f'Unexpected character {substring[index]} at line {line_num}')
-            # index += len(value)
-            # append_token(tokens, token_type, value, line_num)      
+                
     return tokens
 
+
 def read_file():
-    with open("input_files/01_variables.lol", 'r') as file: # read input.txt
+    with open("input_files/06_comparison.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 
