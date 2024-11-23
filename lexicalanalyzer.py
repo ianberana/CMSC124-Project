@@ -12,7 +12,7 @@ TOKEN_PATTERNS = [
     ('VISIBLE', r'^VISIBLE\b'),                      # Output statement keyword
     ('PLUS', r'^(\+)\s'),                  # Output statement separator
     ('GIMMEH', r'^GIMMEH\b'),                        # Input statement keyword
-    ('BTW', r'^\b(BTW) (.*)\b'),                # Single-line comment
+    ('BTW', r'^(BTW) (.*)$'),                # Single-line comment
     ('OBTW', r'^OBTW\b'),            # Start of multi-line comment
     ('TLDR', r'^TLDR\b'),              # End of multi-line comment
     ('NUMBAR', r'(\+|-)?\d*\.\d+'),                    # Float (NUMBAR) literal
@@ -123,9 +123,9 @@ def tokenize(source_code):
                 index += len(match.group(0))
                 continue
 
-            match = re.match(r'^\b(BTW) (.*)\b', substring[index:])
+            match = re.match(r'^\b(BTW) (.*)$', substring[index:])
             if match:
-                append_token(tokens, token_type, match.group(1), line_num)
+                append_token(tokens, 'BTW', match.group(1), line_num)
                 append_token(tokens, 'SINGLECOMMENT', match.group(2), line_num)
                 index += len(match.group(0))
                 continue
@@ -154,7 +154,7 @@ def tokenize(source_code):
 
 
 def read_file():
-    with open("input_files/06_comparison.lol", 'r') as file: # read input.txt
+    with open("input_files/02_gimmeh.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 
