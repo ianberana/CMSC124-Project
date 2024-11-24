@@ -154,7 +154,7 @@ def tokenize(source_code):
 
 
 def read_file():
-    with open("input_files/02_gimmeh.lol", 'r') as file: # read input.txt
+    with open("input_files/07_ifelse.lol", 'r') as file: # read input.txt
         lines = file.readlines()
         return lines
 
