@@ -10,7 +10,8 @@ class SyntaxAnalyzer:
         self.bool_inf_op = ['ALLOF','ANYOF']
         self.com_op = ['BOTHSAEM', 'DIFFRINT']
         self.operations = self.arith_op + self.bool_bin_op + self.bool_inf_op + self.com_op + ['NOT', 'SMOOSH']
-        self.statements = ['BTW', 'OBTW', 'WAZZUP', 'VARIABLE', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH']
+        self.expressions = self.literals + self.operations + ['VARIABLE']
+        self.statements = ['BTW', 'OBTW', 'WAZZUP', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH'] + self.expressions
 
     def current_token(self):
         # Returns the current token.
@@ -49,7 +50,7 @@ class SyntaxAnalyzer:
 
     def parse_program(self):
         self.parse_comments()
-        start_token = self.current_token()["type"]
+        start_token = self.current_token()['type']
         if self.is_not_finished and start_token == 'HAI':
             print("Parsing program...")
             # while self.current_token()["type"] != 'HAI': # iterate while HAI is not found
@@ -57,10 +58,10 @@ class SyntaxAnalyzer:
             # print("hai found: ",self.current_token()["type"])
             self.next_token()
             # Parse statements until we encounter 'KTHXBYE'
-            while self.is_not_finished and self.current_token()["type"] != 'KTHXBYE':
+            while self.is_not_finished and self.current_token()['type'] != 'KTHXBYE':
                 self.parse_statements()
 
-            if self.is_not_finished and self.current_token()["type"] == 'KTHXBYE':
+            if self.is_not_finished and self.current_token()['type'] == 'KTHXBYE':
                 print("Program ends with KTHXBYE")
                 self.next_token()  # Consume 'KTHXBYE'
             else:
@@ -75,7 +76,7 @@ class SyntaxAnalyzer:
         # if token and token["type"] == "BTW":
         #     # Parse comment
         #     pass
-        if token and token["type"] in self.statements:
+        if token and token['type'] in self.statements:
             self.parse_statement()
         else:
             raise RuntimeError(f"Unexpected statement starting with {token}")
@@ -83,25 +84,36 @@ class SyntaxAnalyzer:
     def parse_statement(self):
         token = self.current_token()
         if token:
-            if token["type"] == 'BTW' or token["type"] == 'OBTW':
+            if token['type'] == 'BTW' or token['type'] == 'OBTW':
                 self.parse_comments()
-            elif token["type"] == 'WAZZUP':
+            elif token['type'] == 'WAZZUP':
                 print("Variable declaration section start")
                 self.parse_variable_declaration()  # Parse variable declaration
-            elif token["type"] == 'VISIBLE':
+            elif token['type'] == 'VISIBLE':
                 self.parse_visible_statement()  # Parse VISIBLE statement
-            elif token["type"] in 'VARIABLE':
+            elif token['type'] == 'VARIABLE' and self.tokens[self.index+1]['type'] == 'R':
                 self.parse_assignment()  # Parse variable assignment
-            elif token["type"] == 'GIMMEH':
-                self.parse_gimmeh_statement()
+            elif token['type'] == 'GIMMEH':
+                self.parse_gimmeh_statement() # Parse GIMMEH statement
+            elif token['type'] == 'ORLY':
+                print("If-else (ORLY) section start")
+                self.parse_if_else()  # Parse if-else (ORLY) assignment
+            elif token['type'] == 'WTF':
+                print("Switch (WTF) section start")
+                self.parse_switch()
                 # parse input 
             else:
-                raise RuntimeError(f"Unexpected statement starting with {token}")
+                exp = self.parse_expression()
+                if exp:
+                    print(f"Expression ({exp}) stored in IT")
+                    self.next_token()
+                else:
+                    raise RuntimeError(f"Unexpected statement starting with {token}")
 
     def parse_variable_declaration(self):
         self.next_token()
         self.parse_comments()
-        while self.current_token()["type"] != 'BUHBYE':
+        while self.current_token()['type'] != 'BUHBYE':
             # if other statement (except comments) starts inside wazzup, raise error
             # if self.current_token()['type'] not in ['OBTW','BTW'] and  self.current_token()['type'] in self.statements:
             #     raise RuntimeError(f"Variable declaration section must end with BUHBYE, got {self.current_token()['type']}")
@@ -118,11 +130,11 @@ class SyntaxAnalyzer:
                 self.next_token()
             # The next token should be the variable name
             variable_token = self.next_token()
-            if variable_token["type"] != 'VARIABLE':
+            if variable_token['type'] != 'VARIABLE':
                 raise RuntimeError(f"Expected variable name, got {variable_token}")
             
             # check if there's an 'ITZ' (indicating an initialization)
-            if self.is_not_finished and self.current_token()["type"] == 'ITZ':
+            if self.is_not_finished and self.current_token()['type'] == 'ITZ':
                 self.next_token()  # Consume 'ITZ'
                 # check whether the next token is a valid expression
                 expression = self.parse_expression()
@@ -142,10 +154,10 @@ class SyntaxAnalyzer:
 
         if self.is_not_finished:
             # return value if expression is a valid literal or a variable
-            if exp_token["type"] in list(self.literals + ['VARIABLE']):
+            if exp_token['type'] in list(self.literals + ['VARIABLE']):
                 return exp_token['value']
             # check if expression is a valid operation
-            elif exp_token["type"] in self.operations:
+            elif exp_token['type'] in self.operations:
                 # print(f"declared an operation: {exp_token['value']}")
                 exp = self.parse_operation()
                 # returns value of operation
@@ -157,9 +169,9 @@ class SyntaxAnalyzer:
         operation = self.next_token() # store operation used
         if self.is_not_finished:
             # Handle arithmetic operations
-            if operation["type"] in self.arith_op:
+            if operation['type'] in self.arith_op:
                 op = self.parse_arith_op()
-            elif operation["type"] in self.bool_bin_op:
+            elif operation['type'] in self.bool_bin_op:
                 op = self.parse_bool_bin_op()
             else:
                 raise RuntimeError(f"Unexpected operation starting with {operation}")
@@ -169,7 +181,7 @@ class SyntaxAnalyzer:
         first_op = self.parse_expression()
         self.next_token() # move to "AN" token
         if first_op:
-            if self.current_token()["type"] != "AN":
+            if self.current_token()['type'] != 'AN':
                 raise RuntimeError(f"Expected AN, got {self.current_token()}")
             else:
                 self.next_token() # consume AN
@@ -186,7 +198,7 @@ class SyntaxAnalyzer:
         first_op = self.parse_expression()
         self.next_token() # move to "AN" token
         if first_op:
-            if self.current_token()["type"] != "AN":
+            if self.current_token()['type'] != 'AN':
                 raise RuntimeError(f"Expected AN, got {self.current_token()}")
             else:
                 self.next_token() # consume AN
@@ -221,11 +233,11 @@ class SyntaxAnalyzer:
         self.next_token()
 
     def parse_assignment(self):
-        # variable = self.next_token()  # Variable to assign value to
+        variable = self.next_token()  # Variable to assign value to
         # if variable['type'] != 'VARIABLE':
         #     raise RuntimeError(f"Expected variable, got {variable}")
                                  
-        self.next_token() # go to token 'R'
+        # self.next_token() # go to token 'R'
         if self.current_token()['type'] != 'R':
             raise RuntimeError(f"Expected R, got {self.current_token()}")
         self.next_token() # consume R
@@ -234,5 +246,55 @@ class SyntaxAnalyzer:
         if not exp:
             raise RuntimeError(f"Expected expression, got {value_token}")
 
-        # print(f"Assigned {exp} to variable {variable['value']}")
+        print(f"Assigned {exp} to variable {variable['value']}")
         self.next_token()
+
+    def parse_if_else(self):
+        self.next_token() # Consume 'ORLY'
+        self.parse_comments() # Consume comments
+        yarly = self.next_token() 
+        if yarly['type'] == 'YARLY': # Match If/YARLY token
+            print("If (ORLY) section start")
+            while self.is_not_finished and self.current_token()['type'] not in ['NOWAI', 'OIC']: # Consume statements until Else/NOWAI or If-end/OIC
+                self.parse_statement()
+            print("If (ORLY) section end")
+
+            if self.current_token()['type'] == 'NOWAI': # Match Else/NOWAI token
+                self.next_token()
+                print("Else (NOWAI) section start")
+                while self.is_not_finished and self.current_token()['type'] != 'OIC': # Consume statements until If-end/OIC
+                    self.parse_statement()
+                print("Else (NOWAI) section end")
+
+            if self.current_token()['type'] == 'OIC': # Match If-end/OIC token
+                print("If-else (YARLY) section end")
+            else:
+                raise RuntimeError(f"Expected If-end (OIC), got {yarly['value']}")
+
+            self.next_token() # Go to next token
+        else:
+            raise RuntimeError(f"Expected If (ORLY) block , got {yarly['value']}")
+
+    def parse_switch(self):
+        self.next_token() # Consume 'ORLY'
+        self.parse_comments() # Consume comments
+        yarly = self.next_token() 
+        if yarly['type'] == 'YARLY': # Match If/YARLY token
+            print("If (ORLY) section start")
+            while self.current_token()['type'] not in ['NOWAI', 'OIC']: # Consume statements until Else/NOWAI or If-end/OIC
+                self.parse_statement()
+            print("If (ORLY) section end")
+
+            if self.current_token()['type'] == 'NOWAI': # Match Else/NOWAI token
+                self.next_token()
+                print("Else (NOWAI) section start")
+                while self.current_token()['type'] != 'OIC': # Consume statements until If-end/OIC
+                    self.parse_statement()
+                print("Else (NOWAI) section end")
+
+            if self.current_token()['type'] == 'OIC': # Match If-end/OIC token
+                print("If-else (YARLY) section end")
+
+            self.next_token() # Go to next token
+        else:
+            raise RuntimeError(f"Expected If (ORLY) block , got {yarly['value']}")
