@@ -253,7 +253,7 @@ class SyntaxAnalyzer:
         self.next_token() # Consume 'ORLY'
         self.parse_comments() # Consume comments
         yarly = self.next_token() 
-        if yarly['type'] == 'YARLY': # Match If/YARLY token
+        if self.is_not_finished and yarly['type'] == 'YARLY': # Match If/YARLY token
             print("If (ORLY) section start")
             while self.is_not_finished and self.current_token()['type'] not in ['NOWAI', 'OIC']: # Consume statements until Else/NOWAI or If-end/OIC
                 self.parse_statement()
@@ -276,25 +276,44 @@ class SyntaxAnalyzer:
             raise RuntimeError(f"Expected If (ORLY) block , got {yarly['value']}")
 
     def parse_switch(self):
-        self.next_token() # Consume 'ORLY'
+        self.next_token() # Consume 'WTF'
         self.parse_comments() # Consume comments
-        yarly = self.next_token() 
-        if yarly['type'] == 'YARLY': # Match If/YARLY token
-            print("If (ORLY) section start")
-            while self.current_token()['type'] not in ['NOWAI', 'OIC']: # Consume statements until Else/NOWAI or If-end/OIC
-                self.parse_statement()
-            print("If (ORLY) section end")
+        omg = self.current_token() 
+        if self.is_not_finished and omg['type'] == 'OMG': # Match Case/OMG token
+            self.parse_omg() # Consume Case 'OMG' blocks
 
-            if self.current_token()['type'] == 'NOWAI': # Match Else/NOWAI token
+            print(self.current_token())
+            if self.current_token()['type'] == 'OMGWTF': # Match default/OMGWTF token
                 self.next_token()
-                print("Else (NOWAI) section start")
-                while self.current_token()['type'] != 'OIC': # Consume statements until If-end/OIC
+                print("Default (OMGWTF) section start")
+                while self.is_not_finished and self.current_token()['type'] != 'OIC': # Consume statements until Switch-end/OIC
                     self.parse_statement()
-                print("Else (NOWAI) section end")
 
             if self.current_token()['type'] == 'OIC': # Match If-end/OIC token
-                print("If-else (YARLY) section end")
+                print("Switch (WTF) section end")
+            else:
+                raise RuntimeError(f"Expected Switch-end (OIC), got {omg['value']}")
 
             self.next_token() # Go to next token
         else:
-            raise RuntimeError(f"Expected If (ORLY) block , got {yarly['value']}")
+            raise RuntimeError(f"Expected Case (OMG) block , got {omg['value']}")
+
+    def parse_omg(self):
+        self.next_token() # Consume 'OMG'
+        literal = self.next_token() # Get literal and go to next token
+        if literal['type'] in self.literals: # Match literal token
+            print(f"OMG ({literal['value']}) section start")
+            while self.is_not_finished and self.current_token()['type'] not in ['OMG', 'OMGWTF', 'OIC']: # Consume statements until Case/OMG, Default/OMGWTF, or Switch-end/OIC
+                if self.current_token()['type'] == 'GTFO': # Match 'GTFO'
+                    print(f"{self.current_token()['value']}")
+                    self.next_token()
+                else:
+                    self.parse_statement() # Consume all statements within OMG block
+
+            omg = self.current_token()
+            if omg['type'] == 'OMG': # Match "OMG"
+                self.parse_omg() # Recursively consume all 'OMG'
+            else:
+                return
+        else:
+            raise RuntimeError(f"Expected Literal, got {literal['value']}")
