@@ -11,7 +11,7 @@ class SyntaxAnalyzer:
         self.com_op = ['BOTHSAEM', 'DIFFRINT']
         self.operations = self.arith_op + self.bool_bin_op + self.bool_inf_op + self.com_op + ['NOT', 'SMOOSH']
         self.expressions = self.literals + self.operations + ['VARIABLE']
-        self.statements = ['BTW', 'OBTW', 'WAZZUP', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH'] + self.expressions
+        self.statements = ['BTW', 'OBTW', 'WAZZUP', 'ORLY', 'WTF', 'IMINYR', 'VISIBLE', 'GIMMEH', 'HOWIZI', 'IIZ', 'FOUNDYR', 'GTFO'] + self.expressions
 
     def current_token(self):
         # Returns the current token.
@@ -102,6 +102,12 @@ class SyntaxAnalyzer:
                 print("Switch (WTF) section start")
                 self.parse_switch()
                 # parse input 
+            elif token['type'] == 'HOWIZI':
+                self.parse_function_definition()
+            elif token['type'] == 'IIZ':
+                self.parse_function_call()
+            elif token['type'] == 'FOUNDYR' or token['type'] == 'GTFO':
+                self.parse_return()
             else:
                 exp = self.parse_expression()
                 if exp:
@@ -317,3 +323,81 @@ class SyntaxAnalyzer:
                 return
         else:
             raise RuntimeError(f"Expected Literal, got {literal['value']}")
+        
+    def parse_function_definition(self):
+        self.next_token()  # Consume 'HOWIZI'
+        func_name_token = self.current_token()
+        if func_name_token['type'] == 'LABEL':
+            func_name = func_name_token['value']
+            print(f"Defining function {func_name}")
+            self.next_token()  # Consume the function name
+            self.parse_parameter()
+            # Parse function body until 'IFUSAYSO' token
+            while self.is_not_finished and self.current_token()['type'] != 'IFUSAYSO':
+                self.parse_statements()
+            if self.is_not_finished and self.current_token()['type'] == 'IFUSAYSO':
+                print(f"End of function definition for {func_name}")
+                self.next_token()  # Consume 'IFUSAYSO'
+            else:
+                raise RuntimeError(f"Expected 'IF U SAY SO' to end function definition, got {self.current_token()}")
+        else:
+            raise RuntimeError(f"Expected function identifier after 'HOW IZ I', got {func_name_token}")
+
+    def parse_parameter(self):
+        token = self.current_token()
+        if token['type'] == 'YR':
+            self.next_token()  # Consume 'YR'
+            expr = self.parse_expression()
+            if expr:
+                print(f"Function parameter: {expr}")
+                self.next_token()  # Consume the expression
+                self.parse_infinite_parameter()
+            else:
+                raise RuntimeError(f"Expected expression after 'YR', got {self.current_token()}")
+        else:
+            pass
+
+    def parse_infinite_parameter(self):
+        token = self.current_token()
+        if token['type'] == 'AN':
+            self.next_token()  # Consume 'AN'
+            if self.current_token()['type'] == 'YR':
+                self.next_token()  # Consume 'YR'
+                expr = self.parse_expression()
+                if expr:
+                    print(f"Function parameter: {expr}")
+                    self.next_token()  # Consume the expression
+                    self.parse_infinite_parameter()
+                else:
+                    raise RuntimeError(f"Expected expression after 'YR', got {self.current_token()}")
+            else:
+                raise RuntimeError(f"Expected 'YR' after 'AN', got {self.current_token()}")
+        else:
+            pass
+
+    def parse_function_call(self):
+        self.next_token()  # Consume 'IIZ'
+        func_name_token = self.current_token()
+        if func_name_token['type'] == 'LABEL':
+            func_name = func_name_token['value']
+            print(f"Calling function {func_name}")
+            self.next_token()  # Consume the function name
+            self.parse_parameter()
+        else:
+            raise RuntimeError(f"Expected function identifier after 'I IZ', got {func_name_token}")
+
+    def parse_return(self):
+        token = self.current_token()
+        if token['type'] == 'FOUNDYR':
+            self.next_token()  # Consume 'FOUND YR'
+            expr = self.parse_expression()
+            if expr:
+                print(f"Return statement with value: {expr}")
+                self.next_token()  # Consume the expression
+            else:
+                raise RuntimeError(f"Expected expression after 'FOUND YR', got {self.current_token()}")
+        elif token['type'] == 'GTFO':
+            self.next_token()  # Consume 'GTFO'
+            print("Return statement: GTFO")
+        else:
+            pass
